@@ -3,6 +3,7 @@
 @section('title', 'La bibliothèque du JS')
 
 @section('content')
+    @include('components.notification')
     <div class="container-fluid p-0">
         <div id="shelves-container">
             @foreach($shelves as $shelf)

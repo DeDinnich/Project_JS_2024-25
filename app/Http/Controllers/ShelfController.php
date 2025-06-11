@@ -1,11 +1,11 @@
 <?php
-// app/Http/Controllers/ShelfController.php
 
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use App\Models\Shelf;
+use App\Events\ShelfEvent;
 
 class ShelfController extends Controller
 {
@@ -23,10 +23,13 @@ class ShelfController extends Controller
             Log::info('ShelfController@store - Validation successful', ['validated' => $validated]);
 
             Shelf::where('order', '>=', $validated['order'])->increment('order');
-            Log::info('ShelfController@store - Existing shelves order adjusted');
+            Log::info('ShelfController@store - Incremented order for conflicting shelves');
 
             $shelf = Shelf::create($validated);
-            Log::info('ShelfController@store - Shelf created', ['shelf' => $shelf]);
+            Log::info('ShelfController@store - Shelf created successfully', ['shelf' => $shelf]);
+
+            event(new ShelfEvent(true, 'Étagère créée avec succès.'));
+            Log::info('ShelfController@store - Event dispatched');
 
             return response()->json([
                 'success' => true,
@@ -35,7 +38,7 @@ class ShelfController extends Controller
             ]);
         } catch (\Exception $e) {
             Log::error('ShelfController@store - Error occurred', ['error' => $e->getMessage()]);
-            return response()->json(['success' => false, 'message' => 'An error occurred while storing the shelf.'], 500);
+            return response()->json(['success' => false, 'message' => 'Une erreur est survenue.'], 500);
         }
     }
 
@@ -52,23 +55,25 @@ class ShelfController extends Controller
             Log::info('ShelfController@update - Validation successful', ['validated' => $validated]);
 
             if ($validated['order'] != $shelf->order) {
+                Log::info('ShelfController@update - Order conflict detected', ['validated_order' => $validated['order'], 'current_order' => $shelf->order]);
+
                 $conflict = Shelf::where('order', $validated['order'])
-                                 ->where('id', '!=', $shelf->id)
-                                 ->first();
+                    ->where('id', '!=', $shelf->id)
+                    ->first();
 
                 if ($conflict) {
-                    Log::info('ShelfController@update - Conflict detected', ['conflict' => $conflict]);
+                    Log::info('ShelfController@update - Conflict shelf found', ['conflict' => $conflict]);
 
                     if ($validated['order'] < $shelf->order) {
                         Shelf::where('order', '>=', $validated['order'])
                              ->where('order', '<', $shelf->order)
                              ->increment('order');
-                        Log::info('ShelfController@update - Order adjusted for upward movement');
+                        Log::info('ShelfController@update - Incremented order for conflicting shelves');
                     } else {
                         Shelf::where('order', '<=', $validated['order'])
                              ->where('order', '>', $shelf->order)
                              ->decrement('order');
-                        Log::info('ShelfController@update - Order adjusted for downward movement');
+                        Log::info('ShelfController@update - Decremented order for conflicting shelves');
                     }
                 }
             }
@@ -78,7 +83,10 @@ class ShelfController extends Controller
                 'order' => $validated['order'],
             ]);
 
-            Log::info('ShelfController@update - Shelf updated', ['shelf' => $shelf]);
+            Log::info('ShelfController@update - Shelf updated successfully', ['shelf' => $shelf]);
+
+            event(new ShelfEvent(true, 'Étagère mise à jour.'));
+            Log::info('ShelfController@update - Event dispatched');
 
             return response()->json([
                 'success' => true,
@@ -87,7 +95,7 @@ class ShelfController extends Controller
             ]);
         } catch (\Exception $e) {
             Log::error('ShelfController@update - Error occurred', ['error' => $e->getMessage()]);
-            return response()->json(['success' => false, 'message' => 'An error occurred while updating the shelf.'], 500);
+            return response()->json(['success' => false, 'message' => 'Une erreur est survenue.'], 500);
         }
     }
 
@@ -97,10 +105,13 @@ class ShelfController extends Controller
             Log::info('ShelfController@destroy - Request received', ['shelf' => $shelf]);
 
             $shelf->books()->delete();
-            Log::info('ShelfController@destroy - Books associated with shelf deleted');
+            Log::info('ShelfController@destroy - Associated books deleted');
 
             $shelf->delete();
-            Log::info('ShelfController@destroy - Shelf deleted');
+            Log::info('ShelfController@destroy - Shelf deleted successfully');
+
+            event(new ShelfEvent(true, 'Étagère supprimée.'));
+            Log::info('ShelfController@destroy - Event dispatched');
 
             return response()->json([
                 'success' => true,
@@ -108,7 +119,7 @@ class ShelfController extends Controller
             ]);
         } catch (\Exception $e) {
             Log::error('ShelfController@destroy - Error occurred', ['error' => $e->getMessage()]);
-            return response()->json(['success' => false, 'message' => 'An error occurred while deleting the shelf.'], 500);
+            return response()->json(['success' => false, 'message' => 'Une erreur est survenue.'], 500);
         }
     }
 }
