@@ -12,19 +12,27 @@ class BookEvent implements ShouldBroadcastNow
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
-    public bool $success;
+    public bool   $success;
     public string $message;
-    public string $action;
-    public $book;
-    public array $ordered_ids;
+    public string $action;       // 'create' ou 'reorder'
+    public ?array $book;         // données du livre créé, ou null
+    public array  $ordered_ids;  // pour le reorder
+    public ?string $shelf_id;    // pour savoir quelle étagère mettre à jour
 
-    public function __construct(bool $success, string $message, string $action, $book = null, array $ordered_ids = [])
-    {
+    public function __construct(
+        bool $success,
+        string $message,
+        string $action,
+        ?\App\Models\Book $book = null,
+        array $ordered_ids = [],
+        ?string $shelf_id = null
+    ) {
         $this->success     = $success;
         $this->message     = $message;
         $this->action      = $action;
-        $this->book        = $book;
+        $this->book        = $book ? $book->toArray() : null;
         $this->ordered_ids = $ordered_ids;
+        $this->shelf_id    = $shelf_id;
     }
 
     public function broadcastOn(): Channel
@@ -38,8 +46,9 @@ class BookEvent implements ShouldBroadcastNow
             'success'     => $this->success,
             'message'     => $this->message,
             'action'      => $this->action,
-            'book'        => $this->book ? $this->book->toArray() : null,
+            'book'        => $this->book,
             'ordered_ids' => $this->ordered_ids,
+            'shelf_id'    => $this->shelf_id,
         ];
     }
 }

@@ -1,45 +1,80 @@
 <?php
 
-namespace App\Events;
+namespace App\Http\Controllers;
 
-use Illuminate\Broadcasting\Channel;
-use Illuminate\Broadcasting\InteractsWithSockets;
-use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
-use Illuminate\Foundation\Events\Dispatchable;
-use Illuminate\Queue\SerializesModels;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use App\Models\Book;
+use App\Events\BookEvent;
+use Illuminate\Support\Str;
+use Intervention\Image\Laravel\Facades\Image;
 
-class ShelfEvent implements ShouldBroadcastNow
+class BookController extends Controller
 {
-    use Dispatchable, InteractsWithSockets, SerializesModels;
-
-    public bool $success;
-    public string $message;
-    public string $action;
-    public $shelf;
-    public array $shelves;
-
-    public function __construct(bool $success, string $message, string $action, $shelf = null, array $shelves = [])
+    public function store(Request $request)
     {
-        $this->success = $success;
-        $this->message = $message;
-        $this->action  = $action;
-        $this->shelf   = $shelf;
-        $this->shelves = $shelves;
+        $validated = $request->validate([
+            'shelf_id'    => 'required|exists:shelves,id',
+            'name'        => 'required|string',
+            'description' => 'nullable|string',
+            'image'       => 'required|file|mimes:jpeg,png,jpg,gif,webp|max:2048',
+        ]);
+
+        $lastOrder = Book::where('shelf_id', $validated['shelf_id'])->max('order');
+        $validated['order'] = $lastOrder ? $lastOrder + 1 : 1;
+
+        if ($request->hasFile('image') && $request->file('image')->isValid()) {
+            $img = Image::read($request->file('image')->getPathname());
+            $img->resize(100, 100, fn($c)=>$c->aspectRatio()->upsize());
+            $validated['image'] = 'data:image/webp;base64,'.base64_encode($img->toWebp(75));
+        }
+
+        $book = Book::create([
+            'id'          => Str::uuid(),
+            'shelf_id'    => $validated['shelf_id'],
+            'name'        => $validated['name'],
+            'description' => $validated['description'] ?? null,
+            'image'       => $validated['image'],
+            'order'       => $validated['order'],
+        ]);
+
+        // Envoi immédiat
+        event(new BookEvent(
+            true,
+            'Livre ajouté avec succès.',
+            'create',
+            $book,
+            [],
+            $book->shelf_id
+        ));
+
+        return response()->json(['success'=>true,'book'=>$book]);
     }
 
-    public function broadcastOn(): Channel
+    public function reorder(Request $request)
     {
-        return new Channel('reverb');
-    }
+        $v = $request->validate([
+            'shelf_id'    => 'required|uuid|exists:shelves,id',
+            'ordered_ids' => 'required|array',
+            'ordered_ids.*'=> 'uuid|exists:books,id',
+        ]);
 
-    public function broadcastWith(): array
-    {
-        return [
-            'success' => $this->success,
-            'message' => $this->message,
-            'action'  => $this->action,
-            'shelf'   => $this->shelf ? $this->shelf->toArray() : null,
-            'shelves' => $this->shelves,
-        ];
+        foreach ($v['ordered_ids'] as $i=>$id) {
+            Book::where('id',$id)
+                ->where('shelf_id',$v['shelf_id'])
+                ->update(['order'=>$i]);
+        }
+
+        // Envoi immédiat
+        event(new BookEvent(
+            true,
+            'Ordre des livres mis à jour.',
+            'reorder',
+            null,
+            $v['ordered_ids'],
+            $v['shelf_id']
+        ));
+
+        return response()->json(['success'=>true]);
     }
 }
