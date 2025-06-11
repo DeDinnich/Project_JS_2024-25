@@ -115,63 +115,63 @@ export default function initAjaxForms() {
   });
 }
 
-function renderShelf(shelf) {
-  return `
-    <div class="d-inline-block position-relative shelf-block"
-         data-shelf-id="${shelf.id}"
-         data-order="${shelf.order}"
-         style="width:100vw;height:200px; background:url('/images/texture_fond.png') center/cover repeat; margin-top:-7px;">
-      <div class="h-100 px-3 overflow-auto" style="white-space:nowrap;">
-        <div class="d-inline-flex align-items-center h-100">
-          <!-- Supprimer -->
-          <div class="text-center mx-2" style="width:100px;flex-shrink:0;">
-            <a href="#" class="d-block rounded bg-danger" data-custom-open="deleteShelfModal-${shelf.id}"
-               style="height:100px;border:2px dashed #999;display:flex;align-items:center;justify-content:center;">
-              <i class="fas fa-trash fa-2x text-black"></i>
-            </a>
-            <div class="mt-2 p-2 text-white fw-bold small text-truncate">Supprimer</div>
-          </div>
-          <!-- Modifier -->
-          <div class="text-center mx-2" style="width:100px;flex-shrink:0;">
-            <a href="#" class="d-block rounded bg-warning" data-custom-open="editShelfModal-${shelf.id}"
-               style="height:100px;border:2px dashed #999;display:flex;align-items:center;justify-content:center;">
-              <i class="fas fa-edit fa-2x text-black"></i>
-            </a>
-            <div class="mt-2 p-2 text-white fw-bold small text-truncate">Modifier</div>
-          </div>
-          <!-- Ajouter livre -->
-          <div class="text-center mx-2" style="width:100px;flex-shrink:0;">
-            <a href="#" class="d-block rounded bg-success" data-custom-open="addBookModal-${shelf.id}"
-               style="height:100px;border:2px dashed #999;display:flex;align-items:center;justify-content:center;">
-              <i class="fas fa-plus fa-2x text-black"></i>
-            </a>
-            <div class="mt-2 p-2 text-white fw-bold small text-truncate">Ajouter</div>
-          </div>
-          <!-- Conteneur livres -->
-          <div class="d-inline-flex align-items-center h-100">
-            <!-- injecté par AJAX -->
-          </div>
-        </div>
-      </div>
-      <div class="position-absolute bottom-0 start-0 w-100"
-           style="height:30px;background:url('/images/texture.png') repeat-x;">
-        <div class="position-absolute start-50 translate-middle-x shelf-label"
-             style="background:#fff;padding:0 10px;border-radius:5px;font-weight:bold;top:2px;box-shadow:0 2px 5px rgba(0,0,0,0.2);">
-          ${shelf.name}
-        </div>
-      </div>
-    </div>`;
+export function renderShelf(shelf) {
+    return `
+        <div class="d-inline-block position-relative shelf-block"
+                 data-shelf-id="${shelf.id}"
+                 data-order="${shelf.order}"
+                 style="width:100vw;height:200px; background:url('/images/texture_fond.png') center/cover repeat; margin-top:-7px;">
+            <div class="h-100 px-3 overflow-auto" style="white-space:nowrap;">
+                <div class="d-inline-flex align-items-center h-100">
+                    <!-- Supprimer -->
+                    <div class="text-center mx-2" style="width:100px;flex-shrink:0;">
+                        <a href="#" class="d-block rounded bg-danger" data-custom-open="deleteShelfModal-${shelf.id}"
+                             style="height:100px;border:2px dashed #999;display:flex;align-items:center;justify-content:center;">
+                            <i class="fas fa-trash fa-2x text-black"></i>
+                        </a>
+                        <div class="mt-2 p-2 text-white fw-bold small text-truncate">Supprimer</div>
+                    </div>
+                    <!-- Modifier -->
+                    <div class="text-center mx-2" style="width:100px;flex-shrink:0;">
+                        <a href="#" class="d-block rounded bg-warning" data-custom-open="editShelfModal-${shelf.id}"
+                             style="height:100px;border:2px dashed #999;display:flex;align-items:center;justify-content:center;">
+                            <i class="fas fa-edit fa-2x text-black"></i>
+                        </a>
+                        <div class="mt-2 p-2 text-white fw-bold small text-truncate">Modifier</div>
+                    </div>
+                    <!-- Ajouter livre -->
+                    <div class="text-center mx-2" style="width:100px;flex-shrink:0;">
+                        <a href="#" class="d-block rounded bg-success" data-custom-open="addBookModal-${shelf.id}"
+                             style="height:100px;border:2px dashed #999;display:flex;align-items:center;justify-content:center;">
+                            <i class="fas fa-plus fa-2x text-black"></i>
+                        </a>
+                        <div class="mt-2 p-2 text-white fw-bold small text-truncate">Ajouter</div>
+                    </div>
+                    <!-- Conteneur livres -->
+                    <div class="d-inline-flex align-items-center h-100">
+                        <!-- injecté par AJAX -->
+                    </div>
+                </div>
+            </div>
+            <div class="position-absolute bottom-0 start-0 w-100"
+                     style="height:30px;background:url('/images/texture.png') repeat-x;">
+                <div class="position-absolute start-50 translate-middle-x shelf-label"
+                         style="background:#fff;padding:0 10px;border-radius:5px;font-weight:bold;top:2px;box-shadow:0 2px 5px rgba(0,0,0,0.2);">
+                    ${shelf.name}
+                </div>
+            </div>
+        </div>`;
 }
 
-function renderBook(book) {
-  return `
-    <div class="book-draggable text-center mx-2"
-         data-book-id="${book.id}"
-         data-shelf-id="${book.shelf_id}"
-         style="width:100px;cursor:grab;">
-      <img src="${book.image}" alt="${book.name}" class="img-fluid rounded" style="max-height:120px;">
-      <div class="mt-2 mb-4 p-2 text-white fw-bold small text-truncate">
-        ${book.name}
-      </div>
-    </div>`;
+export function renderBook(book) {
+    return `
+        <div class="book-draggable text-center mx-2"
+                 data-book-id="${book.id}"
+                 data-shelf-id="${book.shelf_id}"
+                 style="width:100px;cursor:grab;">
+            <img src="${book.image}" alt="${book.name}" class="img-fluid rounded" style="max-height:120px;">
+            <div class="mt-2 mb-4 p-2 text-white fw-bold small text-truncate">
+                ${book.name}
+            </div>
+        </div>`;
 }

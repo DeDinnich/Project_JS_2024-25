@@ -1,4 +1,7 @@
-import { rebindScripts } from './helpers';
+// resources/js/modules/notifications.js
+
+import { rebindScripts }        from './helpers';
+import { renderShelf, renderBook } from './ajaxForms';  // <— IMPORT crucial
 
 export default function initNotifications() {
   const container        = document.getElementById('notification-container');
@@ -33,19 +36,17 @@ function showNotification(container, message, success) {
 
 function handleShelf({ action, shelf, shelves }, container) {
   if (action === 'create') {
-    // Utilise le même template que ton AJAX
+    // désormais disponible !
     container.insertAdjacentHTML('beforeend', renderShelf(shelf));
   }
   else if (action === 'update') {
     const el = container.querySelector(`.shelf-block[data-shelf-id="${shelf.id}"]`);
     if (el) {
-      // Mise à jour du label et de l'ordre
       el.querySelector('.shelf-label').textContent = shelf.name;
       el.dataset.order = shelf.order;
     }
   }
   else if (action === 'delete') {
-    // Supprime toute étagère qui n'est plus dans la liste
     Array.from(container.children).forEach(node => {
       if (!shelves.find(s => s.id === node.dataset.shelfId)) {
         node.remove();
@@ -53,11 +54,10 @@ function handleShelf({ action, shelf, shelves }, container) {
     });
   }
 
-  // Re-trie dans l'ordre
+  // tri + rebind
   Array.from(container.children)
-    .sort((a, b) => Number(a.dataset.order) - Number(b.dataset.order))
-    .forEach(n => container.appendChild(n));
-
+    .sort((a,b)=>Number(a.dataset.order)-Number(b.dataset.order))
+    .forEach(n=>container.appendChild(n));
   rebindScripts();
 }
 
@@ -75,8 +75,8 @@ function handleBook({ action, book, ordered_ids, shelf_id }) {
       if (el) el.dataset.order = idx;
     });
     Array.from(flex.children)
-      .sort((a, b) => Number(a.dataset.order) - Number(b.dataset.order))
-      .forEach(n => flex.appendChild(n));
+      .sort((a,b)=>Number(a.dataset.order)-Number(b.dataset.order))
+      .forEach(n=>flex.appendChild(n));
   }
 
   rebindScripts();
