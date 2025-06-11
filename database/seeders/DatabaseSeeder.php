@@ -2,22 +2,18 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
-// use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use App\Models\Shelf;
+use App\Models\Book;
 
 class DatabaseSeeder extends Seeder
 {
-    /**
-     * Seed the application's database.
-     */
     public function run(): void
     {
-        // User::factory(10)->create();
-
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-        ]);
+        Shelf::factory(4)->create()->each(function ($shelf) {
+            Book::factory(1)->create([
+                'shelf_id' => $shelf->id,
+            ]);
+        });
     }
 }

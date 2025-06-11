@@ -1,0 +1,68 @@
+continuons avec une nouvelle fonctionnalité, le menu au drag and drop
+
+voici le fichier etagere:
+
+<div class="d-inline-block position-relative" style="width: 100vw; height: 200px; background-image: url('{{ asset('images/texture_fond.png') }}'); background-size: cover; background-repeat: repeat; margin-top: -7px;">
+
+    {{-- Liste des livres avec scroll horizontal --}}
+    <div class="h-100 px-3 overflow-auto" style="white-space: nowrap;">
+        <div class="d-inline-flex align-items-center h-100">
+
+            {{-- Bouton Ajouter un livre --}}
+            <div class="text-center mx-2" style="width: 100px; flex-shrink: 0;">
+                <a href="#" data-bs-toggle="modal" data-bs-target="#addBookModal-{{ $shelf->id }}" class="d-block rounded bg-light d-flex align-items-center justify-content-center text-decoration-none" style="height: 100px; border: 2px dashed #999;">
+                    <i class="fas fa-plus fa-2x text-secondary"></i>
+                </a>
+
+                @include('partials.modals.add-book', ['shelf' => $shelf])
+            </div>
+
+            {{-- Livres existants --}}
+            @foreach ($shelf->books as $book)
+                <div class="text-center mx-2" style="width: 100px; flex-shrink: 0;">
+                    <img src="{{ $book->image }}" alt="{{ $book->name }}" class="img-fluid rounded book-item" style="max-height: 120px;">
+                    <div class="mt-2 mb-4 p-2 text-white fw-bold small text-truncate" style="
+                        background: rgba(255, 255, 255, 0.3);
+                        color: #ffffff;
+                        backdrop-filter: blur(5px);
+                        border-radius: 5px;
+                        max-width: 100px;
+                    ">
+                        {{ $book->name }}
+                    </div>
+                </div>
+            @endforeach
+
+            <style>
+
+            </style>
+
+        </div>
+    </div>
+
+    {{-- Planche visuelle --}}
+    <div class="position-absolute bottom-0 start-0 w-100" style="
+        height: 30px;
+        background-image: url('{{ asset('images/texture.png') }}');
+        background-repeat: repeat-x;
+        background-size: auto 100%;
+    ">
+        {{-- Etiquette blanche avec le nom de l'étagère --}}
+        <div class="position-absolute start-50 translate-middle-x text-center" style="
+            background: #ffffff;
+            color: #000000;
+            padding: 0px 10px;
+            border-radius: 5px;
+            font-weight: bold;
+            top: 2px;
+            box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.2);
+        ">
+            {{ $shelf->name }}
+        </div>
+    </div>
+</div>
+
+
+voici ce que je veux:
+
+je peux cliquer

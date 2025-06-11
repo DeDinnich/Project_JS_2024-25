@@ -2,12 +2,14 @@
 @import "../../public/fonts/fontAwesome/css/all.min.css";
 @import "mapbox-gl/dist/mapbox-gl.css";
 
+@import "index.css";
+
 /* Layouts */
 
 /* Pages */
 
 /* Partials */
-@import "partials/landing/header.css";
-@import "partials/landing/footer.css";
+@import "partials/header.css";
+@import "partials/footer.css";
 
 /* Components */
