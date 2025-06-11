@@ -2,7 +2,6 @@
 
 namespace App\Events;
 
-
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
@@ -15,11 +14,17 @@ class ShelfEvent implements ShouldBroadcastNow
 
     public bool $success;
     public string $message;
+    public string $action;
+    public $shelf;
+    public array $shelves;
 
-    public function __construct(bool $success, string $message)
+    public function __construct(bool $success, string $message, string $action, $shelf = null, array $shelves = [])
     {
         $this->success = $success;
         $this->message = $message;
+        $this->action  = $action;
+        $this->shelf   = $shelf;
+        $this->shelves = $shelves;
     }
 
     public function broadcastOn(): Channel
@@ -32,6 +37,9 @@ class ShelfEvent implements ShouldBroadcastNow
         return [
             'success' => $this->success,
             'message' => $this->message,
+            'action'  => $this->action,
+            'shelf'   => $this->shelf ? $this->shelf->toArray() : null,
+            'shelves' => $this->shelves,
         ];
     }
 }

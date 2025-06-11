@@ -14,11 +14,17 @@ class BookEvent implements ShouldBroadcastNow
 
     public bool $success;
     public string $message;
+    public string $action;
+    public $book;
+    public array $ordered_ids;
 
-    public function __construct(bool $success, string $message)
+    public function __construct(bool $success, string $message, string $action, $book = null, array $ordered_ids = [])
     {
-        $this->success = $success;
-        $this->message = $message;
+        $this->success     = $success;
+        $this->message     = $message;
+        $this->action      = $action;
+        $this->book        = $book;
+        $this->ordered_ids = $ordered_ids;
     }
 
     public function broadcastOn(): Channel
@@ -29,8 +35,11 @@ class BookEvent implements ShouldBroadcastNow
     public function broadcastWith(): array
     {
         return [
-            'success' => $this->success,
-            'message' => $this->message,
+            'success'     => $this->success,
+            'message'     => $this->message,
+            'action'      => $this->action,
+            'book'        => $this->book ? $this->book->toArray() : null,
+            'ordered_ids' => $this->ordered_ids,
         ];
     }
 }

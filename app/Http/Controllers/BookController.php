@@ -14,8 +14,6 @@ class BookController extends Controller
     public function store(Request $request)
     {
         try {
-            Log::info('Starting book creation process.', ['request' => $request->all()]);
-
             $validated = $request->validate([
                 'shelf_id'    => 'required|exists:shelves,id',
                 'name'        => 'required|string',
@@ -23,17 +21,13 @@ class BookController extends Controller
                 'image'       => 'required|file|mimes:jpeg,png,jpg,gif,webp|max:2048',
             ]);
 
-            Log::info('Validation successful.', ['validated' => $validated]);
-
-            $last = Book::where('shelf_id', $validated['shelf_id'])->max('order');
-            $validated['order'] = $last ? $last + 1 : 1;
+            $lastOrder = Book::where('shelf_id', $validated['shelf_id'])->max('order');
+            $validated['order'] = $lastOrder ? $lastOrder + 1 : 1;
 
             if ($request->hasFile('image') && $request->file('image')->isValid()) {
-                Log::info('Processing image upload.');
                 $img = Image::read($request->file('image')->getPathname());
                 $img->resize(100, 100, fn($c) => $c->aspectRatio()->upsize());
                 $validated['image'] = 'data:image/webp;base64,' . base64_encode($img->toWebp(75));
-                Log::info('Image processed successfully.');
             }
 
             $book = Book::create([
@@ -45,45 +39,56 @@ class BookController extends Controller
                 'order'       => $validated['order'],
             ]);
 
-            Log::info('Book created successfully.', ['book' => $book]);
+            event(new BookEvent(
+                true,
+                'Livre ajouté avec succès.',
+                'create',
+                $book
+            ));
 
-            event(new BookEvent(true, 'Livre ajouté avec succès.'));
-            Log::info('Book creation event dispatched.');
-
-            return response()->json(['success' => true, 'book' => $book]);
+            return response()->json([
+                'success' => true,
+                'book'    => $book,
+            ]);
         } catch (\Exception $e) {
-            Log::error('Error occurred during book creation.', ['error' => $e->getMessage()]);
-            return response()->json(['success' => false, 'message' => 'Une erreur est survenue lors de la création du livre.'], 500);
+            Log::error('BookController@store - Error', ['error' => $e->getMessage()]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Une erreur est survenue lors de la création du livre.'
+            ], 500);
         }
     }
 
     public function reorder(Request $request)
     {
         try {
-            Log::info('Starting book reorder process.', ['request' => $request->all()]);
-
-            $v = $request->validate([
+            $data = $request->validate([
                 'shelf_id'    => 'required|uuid|exists:shelves,id',
                 'ordered_ids' => 'required|array',
                 'ordered_ids.*' => 'uuid|exists:books,id',
             ]);
 
-            Log::info('Validation successful.', ['validated' => $v]);
-
-            foreach ($v['ordered_ids'] as $i => $id) {
+            foreach ($data['ordered_ids'] as $index => $id) {
                 Book::where('id', $id)
-                    ->where('shelf_id', $v['shelf_id'])
-                    ->update(['order' => $i]);
-                Log::info('Updated book order.', ['book_id' => $id, 'order' => $i]);
+                    ->where('shelf_id', $data['shelf_id'])
+                    ->update(['order' => $index]);
             }
 
-            event(new BookEvent(true, 'Ordre des livres mis à jour.'));
-            Log::info('Book reorder event dispatched.');
+            event(new BookEvent(
+                true,
+                'Ordre des livres mis à jour.',
+                'reorder',
+                null,
+                $data['ordered_ids']
+            ));
 
             return response()->json(['success' => true]);
         } catch (\Exception $e) {
-            Log::error('Error occurred during book reorder.', ['error' => $e->getMessage()]);
-            return response()->json(['success' => false, 'message' => 'Une erreur est survenue lors de la mise à jour de l\'ordre des livres.'], 500);
+            Log::error('BookController@reorder - Error', ['error' => $e->getMessage()]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Une erreur est survenue lors de la mise à jour de l’ordre des livres.'
+            ], 500);
         }
     }
 }
