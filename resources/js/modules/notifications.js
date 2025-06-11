@@ -1,3 +1,5 @@
+import { rebindScripts } from './helpers';
+
 export default function initNotifications() {
   const container        = document.getElementById('notification-container');
   const shelvesContainer = document.getElementById('shelves-container');
