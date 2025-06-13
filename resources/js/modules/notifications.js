@@ -1,10 +1,10 @@
 // resources/js/modules/notifications.js
 
-import { rebindScripts }        from './helpers';
-import { renderShelf, renderBook } from './ajaxForms';  // <— IMPORT crucial
+import { rebindScripts } from './helpers';
+import { renderShelf, renderBook } from './renderer';
 
 export default function initNotifications() {
-  const container        = document.getElementById('notification-container');
+  const container = document.getElementById('notification-container');
   const shelvesContainer = document.getElementById('shelves-container');
   if (!container || !shelvesContainer || !window.Echo) return;
 
@@ -35,48 +35,42 @@ function showNotification(container, message, success) {
 }
 
 function handleShelf({ action, shelf, shelves }, container) {
-  if (action === 'create') {
-    // désormais disponible !
+  if (action === 'create' && shelf) {
     container.insertAdjacentHTML('beforeend', renderShelf(shelf));
-  }
-  else if (action === 'update') {
+  } else if (action === 'update' && shelf) {
     const el = container.querySelector(`.shelf-block[data-shelf-id="${shelf.id}"]`);
     if (el) {
-      el.querySelector('.shelf-label').textContent = shelf.name;
+      el.querySelector('.shelf-label-text').textContent = shelf.name;
       el.dataset.order = shelf.order;
     }
-  }
-  else if (action === 'delete') {
+  } else if (action === 'delete') {
     Array.from(container.children).forEach(node => {
-      if (!shelves.find(s => s.id === node.dataset.shelfId)) {
-        node.remove();
-      }
+      if (!shelves.includes(node.dataset.shelfId)) node.remove();
     });
   }
 
-  // tri + rebind
   Array.from(container.children)
-    .sort((a,b)=>Number(a.dataset.order)-Number(b.dataset.order))
-    .forEach(n=>container.appendChild(n));
+    .sort((a, b) => Number(a.dataset.order) - Number(b.dataset.order))
+    .forEach(n => container.appendChild(n));
+
   rebindScripts();
 }
 
 function handleBook({ action, book, ordered_ids, shelf_id }) {
   const shelfBlock = document.querySelector(`.shelf-block[data-shelf-id="${shelf_id}"]`);
   if (!shelfBlock) return;
-  const flex = shelfBlock.querySelector('.d-inline-flex');
+  const flex = shelfBlock.querySelector('.shelf-inner');
 
   if (action === 'create' && book) {
-    flex.insertAdjacentHTML('beforeend', renderBook(book));
-  }
-  else if (action === 'reorder') {
+    flex.insertAdjacentHTML('beforeend', renderBook(book, shelf_id));
+  } else if (action === 'reorder' && ordered_ids) {
     ordered_ids.forEach((id, idx) => {
-      const el = flex.querySelector(`.book-draggable[data-book-id="${id}"]`);
+      const el = flex.querySelector(`.book-item[data-book-id="${id}"]`);
       if (el) el.dataset.order = idx;
     });
     Array.from(flex.children)
-      .sort((a,b)=>Number(a.dataset.order)-Number(b.dataset.order))
-      .forEach(n=>flex.appendChild(n));
+      .sort((a, b) => Number(a.dataset.order) - Number(b.dataset.order))
+      .forEach(n => flex.appendChild(n));
   }
 
   rebindScripts();

@@ -47,81 +47,40 @@ class ShelfController extends Controller
         }
     }
 
-    public function update(Request $request, Shelf $shelf)
+    public function reorder(Request $request)
     {
         try {
             $validated = $request->validate([
-                'name'  => 'required|string|max:255',
-                'order' => 'required|integer',
+                'ordered_ids'   => 'required|array',
+                'ordered_ids.*' => 'uuid|exists:shelves,id',
             ]);
 
-            if ($validated['order'] != $shelf->order) {
-                $conflict = Shelf::where('order', $validated['order'])
-                                 ->where('id', '!=', $shelf->id)
-                                 ->first();
-                if ($conflict) {
-                    if ($validated['order'] < $shelf->order) {
-                        Shelf::where('order', '>=', $validated['order'])
-                             ->where('order', '<', $shelf->order)
-                             ->increment('order');
-                    } else {
-                        Shelf::where('order', '<=', $validated['order'])
-                             ->where('order', '>', $shelf->order)
-                             ->decrement('order');
-                    }
-                }
+            foreach ($validated['ordered_ids'] as $index => $id) {
+                \App\Models\Shelf::where('id', $id)->update(['order' => $index]);
             }
 
-            $shelf->update([
-                'name'  => $validated['name'],
-                'order' => $validated['order'],
-            ]);
-
-            event(new ShelfEvent(
+            // Event de mise à jour si besoin
+            event(new \App\Events\ShelfEvent(
                 true,
-                'Étagère mise à jour.',
-                'update',
-                $shelf,
-                Shelf::orderBy('order')->get()->toArray()
-            ));
-
-            return response()->json([
-                'success' => true,
-                'shelf'   => $shelf,
-                'shelves' => Shelf::orderBy('order')->get(),
-            ]);
-        } catch (\Exception $e) {
-            Log::error('ShelfController@update - Error', ['error' => $e->getMessage()]);
-            return response()->json([
-                'success' => false,
-                'message' => 'Une erreur est survenue lors de la mise à jour.'
-            ], 500);
-        }
-    }
-
-    public function destroy(Shelf $shelf)
-    {
-        try {
-            $shelf->books()->delete();
-            $shelf->delete();
-
-            event(new ShelfEvent(
-                true,
-                'Étagère supprimée.',
-                'delete',
+                'Ordre des étagères mis à jour.',
+                'reorder',
                 null,
-                Shelf::orderBy('order')->get()->toArray()
+                $validated['ordered_ids']
             ));
 
-            return response()->json([
-                'success' => true,
-                'shelves' => Shelf::orderBy('order')->get(),
-            ]);
-        } catch (\Exception $e) {
-            Log::error('ShelfController@destroy - Error', ['error' => $e->getMessage()]);
+            return response()->json(['success' => true]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            Log::error('ShelfController@reorder - Validation Error', ['errors' => $e->errors()]);
             return response()->json([
                 'success' => false,
-                'message' => 'Une erreur est survenue lors de la suppression.'
+                'message' => 'Erreur de validation des données.',
+                'errors'  => $e->errors(),
+            ], 422);
+        } catch (\Exception $e) {
+            Log::error('ShelfController@reorder - Error', ['error' => $e->getMessage()]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Une erreur est survenue lors de la réorganisation.',
             ], 500);
         }
     }

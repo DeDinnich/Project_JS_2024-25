@@ -1,44 +1,48 @@
 // resources/js/modules/initBookDrag.js
-
 export default function initBookDrag() {
-  const draggables = document.querySelectorAll('.book-draggable');
+  const draggables = document.querySelectorAll('.book-item');
   let dragged = null;
 
   draggables.forEach(book => {
-    // Empêche double initialisation
     if (book.dataset.dragInit) return;
     book.dataset.dragInit = 'true';
-
-    book.setAttribute('draggable', true);
+    book.draggable = true;
 
     book.addEventListener('dragstart', () => {
       dragged = book;
-      console.log('Drag start:', dragged.dataset.bookId);
-      setTimeout(() => book.classList.add('invisible'), 0);
+      console.log('📚 [DragStart] book-id:', dragged.dataset.bookId);
+      setTimeout(() => dragged.classList.add('invisible'), 0);
     });
 
     book.addEventListener('dragend', () => {
-      if (dragged) dragged.classList.remove('invisible');
-      console.log('Drag end');
+      if (dragged) {
+        dragged.classList.remove('invisible');
+        console.log('📚 [DragEnd] book');
+      }
       dragged = null;
     });
 
     book.addEventListener('dragover', e => {
+      if (!(dragged && dragged.classList.contains('book-item'))) return;
+      console.log('📚 [DragOver] book-id:', book.dataset.bookId);
       e.preventDefault();
     });
 
     book.addEventListener('dragenter', () => {
-      if (book !== dragged) {
-        book.classList.add('border', 'border-primary');
-        console.log('Drag enter:', book.dataset.bookId);
-      }
+      if (!(dragged && dragged.classList.contains('book-item')) || book === dragged) return;
+      console.log('📚 [DragEnter] book-id:', book.dataset.bookId);
+      book.classList.add('border', 'border-primary');
     });
 
     book.addEventListener('dragleave', () => {
+      if (!(dragged && dragged.classList.contains('book-item'))) return;
+      console.log('📚 [DragLeave] book-id:', book.dataset.bookId);
       book.classList.remove('border', 'border-primary');
     });
 
     book.addEventListener('drop', e => {
+      if (!(dragged && dragged.classList.contains('book-item'))) return;
+      console.log('📚 [Drop] on book-id:', book.dataset.bookId);
       e.preventDefault();
       book.classList.remove('border', 'border-primary');
 
@@ -46,30 +50,16 @@ export default function initBookDrag() {
 
       const parent = book.parentNode;
       const booksArray = Array.from(parent.children);
-      const draggedIndex = booksArray.indexOf(dragged);
-      const targetIndex = booksArray.indexOf(book);
+      const from = booksArray.indexOf(dragged);
+      const to = booksArray.indexOf(book);
+      console.log(`📚 [Reorder] from ${from} to ${to}`);
 
-      console.log('Drop detected');
-      console.log('Dragged index:', draggedIndex, 'Target index:', targetIndex);
+      if (from < to) parent.insertBefore(dragged, book.nextSibling);
+      else parent.insertBefore(dragged, book);
 
-      if (draggedIndex < 0 || targetIndex < 0) {
-        console.warn('One of the elements not found in DOM structure');
-        return;
-      }
-
-      if (draggedIndex < targetIndex) {
-        console.log('Moving after (droite)');
-        parent.insertBefore(dragged, book.nextSibling);
-      } else {
-        console.log('Moving before (gauche)');
-        parent.insertBefore(dragged, book);
-      }
-
-      const newOrder = Array.from(parent.querySelectorAll('.book-draggable'))
-        .map(b => b.dataset.bookId);
+      const newOrder = Array.from(parent.querySelectorAll('.book-item')).map(b => b.dataset.bookId);
+      console.log('📚 [NewOrder]:', newOrder);
       const shelfId = dragged.dataset.shelfId;
-
-      console.log('New order:', newOrder);
 
       fetch('/books/reorder', {
         method: 'POST',
@@ -77,14 +67,11 @@ export default function initBookDrag() {
           'Content-Type': 'application/json',
           'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
         },
-        body: JSON.stringify({
-          shelf_id: shelfId,
-          ordered_ids: newOrder
-        })
+        body: JSON.stringify({ shelf_id: shelfId, ordered_ids: newOrder })
       })
       .then(res => res.json())
-      .then(data => console.log('Reorder OK:', data))
-      .catch(err => console.error('Erreur reorder:', err));
+      .then(data => console.log('✅ [Reorder books] OK:', data))
+      .catch(err => console.error('❌ [Reorder books] Error:', err));
     });
   });
 }

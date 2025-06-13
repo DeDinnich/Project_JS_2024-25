@@ -19,6 +19,10 @@
     <meta property="og:url" content="{{ url()->current() }}">
     <meta name="twitter:card" content="summary_large_image">
 
+    <script>
+        window.__initialShelves = @json($shelves);
+    </script>
+
     {{-- CSS (via Vite) --}}
     @if (app()->environment('production'))
         @vite(['resources/js/app.js'], 'build')
