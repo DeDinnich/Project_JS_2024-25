@@ -77,4 +77,37 @@ class BookController extends Controller
 
         return response()->json(['success'=>true]);
     }
+
+    public function move(Request $request)
+    {
+        $v = $request->validate([
+            'book_id'        => 'required|uuid|exists:books,id',
+            'from_shelf_id'  => 'required|uuid|exists:shelves,id',
+            'to_shelf_id'    => 'required|uuid|exists:shelves,id',
+            'ordered_ids'    => 'required|array',
+            'ordered_ids.*'  => 'uuid|exists:books,id',
+        ]);
+
+        // 1) on change l'étagère du livre
+        Book::where('id', $v['book_id'])
+            ->update(['shelf_id' => $v['to_shelf_id']]);
+
+        // 2) on réordonne l'ancienne étagère
+        $oldOrder = Book::where('shelf_id', $v['from_shelf_id'])->pluck('id')->all();
+        foreach ($oldOrder as $i => $id) {
+            Book::where('id', $id)->update(['order' => $i]);
+        }
+
+        // 3) on réordonne la nouvelle étagère selon ordered_ids
+        foreach ($v['ordered_ids'] as $i => $id) {
+            Book::where('id', $id)
+                ->update(['order' => $i, 'shelf_id' => $v['to_shelf_id']]);
+        }
+
+        // 4) émettre deux events pour que le front réagisse
+        event(new BookEvent(true, 'Ordre de l’ancienne étagère mis à jour.', 'reorder', null, $oldOrder, $v['from_shelf_id']));
+        event(new BookEvent(true, 'Livre déplacé et nouvel ordre appliqué.', 'reorder', null, $v['ordered_ids'], $v['to_shelf_id']));
+
+        return response()->json(['success' => true]);
+    }
 }

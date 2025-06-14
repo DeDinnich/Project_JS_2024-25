@@ -3,6 +3,7 @@
 export default function initBookDrag() {
   const draggables = document.querySelectorAll('.book-item');
   let dragged = null;
+  let originShelf = null;
 
   draggables.forEach(book => {
     if (book.dataset.dragInit) return;
@@ -12,72 +13,81 @@ export default function initBookDrag() {
     book.addEventListener('dragstart', e => {
       e.stopPropagation();
       dragged = book;
-      console.log('📚 [DragStart] book-id:', dragged.dataset.bookId);
+      originShelf = book.dataset.shelfId;
       setTimeout(() => dragged.classList.add('invisible'), 0);
+      console.log('📚 [DragStart]', dragged.dataset.bookId, 'from shelf', originShelf);
     });
 
     book.addEventListener('dragend', e => {
       e.stopPropagation();
       if (dragged) {
         dragged.classList.remove('invisible');
-        console.log('📚 [DragEnd] book-id:', dragged.dataset.bookId);
+        console.log('📚 [DragEnd]');
       }
       dragged = null;
+      originShelf = null;
     });
 
     book.addEventListener('dragover', e => {
       e.stopPropagation();
       if (!dragged) return;
       e.preventDefault();
-      console.log('📚 [DragOver] book-id:', book.dataset.bookId);
-    });
-
-    book.addEventListener('dragenter', e => {
-      e.stopPropagation();
-      if (!dragged || book === dragged) return;
-      console.log('📚 [DragEnter] book-id:', book.dataset.bookId);
-      book.classList.add('border', 'border-primary');
-    });
-
-    book.addEventListener('dragleave', e => {
-      e.stopPropagation();
-      if (!dragged) return;
-      console.log('📚 [DragLeave] book-id:', book.dataset.bookId);
-      book.classList.remove('border', 'border-primary');
     });
 
     book.addEventListener('drop', e => {
       e.stopPropagation();
       if (!dragged || book === dragged) return;
       e.preventDefault();
-      console.log('📚 [Drop] on book-id:', book.dataset.bookId);
-      book.classList.remove('border', 'border-primary');
 
+      // 1) déplacer dans le DOM
+      const targetShelf = book.dataset.shelfId;
       const parent = book.parentNode;
       const booksArray = Array.from(parent.children);
-      const from = booksArray.indexOf(dragged);
-      const to = booksArray.indexOf(book);
-      console.log(`📚 [Reorder] from ${from} to ${to}`);
-
-      if (from < to) parent.insertBefore(dragged, book.nextSibling);
+      const fromIdx = booksArray.indexOf(dragged);
+      const toIdx   = booksArray.indexOf(book);
+      if (fromIdx < toIdx) parent.insertBefore(dragged, book.nextSibling);
       else parent.insertBefore(dragged, book);
 
+      // 2) calculer le nouvel ordre de la targetShelf
       const newOrder = Array.from(parent.querySelectorAll('.book-item'))
         .map(b => b.dataset.bookId);
-      console.log('📚 [NewOrder]:', newOrder);
-      const shelfId = dragged.dataset.shelfId;
 
-      fetch('/books/reorder', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-        },
-        body: JSON.stringify({ shelf_id: shelfId, ordered_ids: newOrder })
-      })
-      .then(res => res.json())
-      .then(data => console.log('✅ [Reorder books] OK:', data))
-      .catch(err => console.error('❌ [Reorder books] Error:', err));
+      console.log('📚 [Drop] moved to shelf', targetShelf, 'newOrder:', newOrder);
+
+      // 3) si même étagère, on appelle /books/reorder
+      if (originShelf === targetShelf) {
+        fetch('/books/reorder', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content
+          },
+          body: JSON.stringify({
+            shelf_id: targetShelf,
+            ordered_ids: newOrder
+          })
+        })
+        .then(r => r.json()).then(() => console.log('✅ [Reorder OK] same shelf'))
+        .catch(err => console.error(err));
+      }
+      // 4) sinon, on appelle /books/move
+      else {
+        fetch('/books/move', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content
+          },
+          body: JSON.stringify({
+            book_id: dragged.dataset.bookId,
+            from_shelf_id: originShelf,
+            to_shelf_id: targetShelf,
+            ordered_ids: newOrder
+          })
+        })
+        .then(r => r.json()).then(() => console.log('✅ [Move OK] inter-shelf'))
+        .catch(err => console.error(err));
+      }
     });
   });
 }

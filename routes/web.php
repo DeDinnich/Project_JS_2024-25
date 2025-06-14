@@ -12,5 +12,6 @@ Route::post('/shelves/reorder', [ShelfController::class, 'reorder'])->name('shel
 
 Route::post('/books', [BookController::class, 'store'])->name('books.store');
 Route::post('/books/reorder', [BookController::class, 'reorder'])->name('books.reorder');
+Route::post('/books/move', [BookController::class, 'move'])->name('books.move');
 Route::put('/books/{book}',    [BookController::class, 'update'])->name('books.update');
 Route::delete('/books/{book}',    [BookController::class, 'destroy'])->name('books.destroy');
