@@ -230,3 +230,38 @@
   background-color: #d4edda !important;
   color: #155724;
 }
+
+/* CSS */
+.site-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 12vh;
+  background-image: url('../images/bg-header2.png');
+  background-size: cover;
+  z-index: 1020;
+  overflow: hidden;
+}
+
+.site-header .overlay {
+  position: absolute;
+  inset: 0;
+  background-color: rgba(0,0,0,0.3); /* ajustez l’opacité si besoin */
+}
+
+.site-header .header-content {
+  position: relative;
+  height: 100%;
+  color: #ffc107;  /* text-warning */
+  font-size: 1.5rem;
+}
+
+.header-spacer {
+  height: 12vh;
+  width: 100%;
+}
+
+.fa-2x {
+  font-size: 1.8rem !important;
+}
