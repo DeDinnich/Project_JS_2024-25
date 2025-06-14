@@ -5,15 +5,13 @@ export default function initShelfDrag() {
   const container = document.getElementById('shelves-container');
   if (!container) return;
 
-  // Ne bind qu'une seule fois
-  if (container.dataset.dragInit) {
-    return;
-  }
+  // Prevent multiple bindings
+  if (container.dataset.dragInit) return;
   container.dataset.dragInit = 'true';
 
   let dragged = null;
 
-  // Drag start
+  // When drag starts on a shelf
   container.addEventListener('dragstart', e => {
     const shelf = e.target.closest('.shelf-block');
     if (!shelf) return;
@@ -21,14 +19,14 @@ export default function initShelfDrag() {
     console.log('📦 [DragStart] shelf-id:', dragged.dataset.shelfId);
   });
 
-  // Drag end
+  // When drag ends
   container.addEventListener('dragend', e => {
     if (!dragged) return;
     console.log('📦 [DragEnd] shelf-id:', dragged.dataset.shelfId);
     dragged = null;
   });
 
-  // Drag over
+  // Allow dragover to signal droppable targets
   container.addEventListener('dragover', e => {
     const shelf = e.target.closest('.shelf-block');
     if (!dragged || !shelf || shelf === dragged) return;
@@ -36,7 +34,7 @@ export default function initShelfDrag() {
     console.log('📦 [DragOver] shelf-id:', shelf.dataset.shelfId);
   });
 
-  // Drag enter → highlight
+  // Highlight target on dragenter
   container.addEventListener('dragenter', e => {
     const shelf = e.target.closest('.shelf-block');
     if (!dragged || !shelf || shelf === dragged) return;
@@ -47,7 +45,7 @@ export default function initShelfDrag() {
     }
   });
 
-  // Drag leave → un-highlight
+  // Remove highlight on dragleave
   container.addEventListener('dragleave', e => {
     const shelf = e.target.closest('.shelf-block');
     if (!shelf) return;
@@ -58,12 +56,13 @@ export default function initShelfDrag() {
     }
   });
 
-  // Drop → reorder
+  // Handle drop to reorder
   container.addEventListener('drop', e => {
     const shelf = e.target.closest('.shelf-block');
     if (!dragged || !shelf) return;
     e.preventDefault();
 
+    // Clean up highlight
     const label = shelf.querySelector('.shelf-label-text');
     if (label) {
       label.classList.remove('drop-target');
@@ -71,20 +70,20 @@ export default function initShelfDrag() {
     }
     if (shelf === dragged) return;
 
+    // Swap in DOM
     const items = Array.from(container.children);
-    const from = items.indexOf(dragged);
-    const to   = items.indexOf(shelf);
-    console.log(`📦 [Reorder] from ${from} to ${to}`);
+    const fromIndex = items.indexOf(dragged);
+    const toIndex   = items.indexOf(shelf);
+    console.log(`📦 [Reorder] from ${fromIndex} to ${toIndex}`);
+    if (fromIndex < toIndex) container.insertBefore(dragged, shelf.nextSibling);
+    else                     container.insertBefore(dragged, shelf);
 
-    if (from < to) container.insertBefore(dragged, shelf.nextSibling);
-    else           container.insertBefore(dragged, shelf);
-
-    // Nouvelle série d'IDs
+    // Build new order
     const newOrder = Array.from(container.querySelectorAll('.shelf-block'))
       .map(el => el.dataset.shelfId);
     console.log('📦 [NewOrder]:', newOrder);
 
-    // Mise à jour back-end
+    // Send to backend
     fetch('/shelves/reorder', {
       method: 'POST',
       headers: {
@@ -93,18 +92,17 @@ export default function initShelfDrag() {
       },
       body: JSON.stringify({ ordered_ids: newOrder })
     })
-    .then(r => r.json())
+    .then(res => res.json())
     .then(data => {
       console.log('✅ [Reorder shelves] OK:', data);
-      // Met à jour localStorage + rerender
+      // Update localStorage and rerender
       const stored = JSON.parse(localStorage.getItem('shelves') || '[]');
       const reordered = newOrder
         .map(id => stored.find(s => s.id === id))
         .filter(Boolean);
-      // Remet à jour l'ordre dans l'objet
       reordered.forEach((s, idx) => s.order = idx);
       updateStorage(reordered);
-      console.log('📦 [LocalStorage] mise à jour (order réinitialisé) et rendu');
+      console.log('📦 [LocalStorage] mise à jour et rendu');
     })
     .catch(err => console.error('❌ [Reorder shelves] Error:', err));
   });

@@ -265,3 +265,15 @@
 .fa-2x {
   font-size: 1.8rem !important;
 }
+
+.header-actions .drop-target-action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  cursor: pointer;
+}
+.header-actions .drop-target-action.drop-over {
+  box-shadow: 0 0 0 .25rem rgba(255,255,255,0.75);
+}

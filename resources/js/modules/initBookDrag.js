@@ -44,7 +44,7 @@ export default function initBookDrag() {
       const parent = book.parentNode;
       const booksArray = Array.from(parent.children);
       const fromIdx = booksArray.indexOf(dragged);
-      const toIdx   = booksArray.indexOf(book);
+      const toIdx = booksArray.indexOf(book);
       if (fromIdx < toIdx) parent.insertBefore(dragged, book.nextSibling);
       else parent.insertBefore(dragged, book);
 
@@ -67,7 +67,8 @@ export default function initBookDrag() {
             ordered_ids: newOrder
           })
         })
-        .then(r => r.json()).then(() => console.log('✅ [Reorder OK] same shelf'))
+        .then(r => r.json())
+        .then(() => console.log('✅ [Reorder OK] same shelf'))
         .catch(err => console.error(err));
       }
       // 4) sinon, on appelle /books/move
@@ -85,7 +86,8 @@ export default function initBookDrag() {
             ordered_ids: newOrder
           })
         })
-        .then(r => r.json()).then(() => console.log('✅ [Move OK] inter-shelf'))
+        .then(r => r.json())
+        .then(() => console.log('✅ [Move OK] inter-shelf'))
         .catch(err => console.error(err));
       }
     });

@@ -37,15 +37,6 @@ export function renderShelf(shelf) {
     <div class="shelf-scroll">
       <div class="shelf-inner">
 
-        <!-- actions delete / edit / add as before -->
-        <div class="shelf-action text-center" data-drop-role="delete">
-          <div class="btn bg-danger"><i class="fas fa-trash"></i></div>
-          <div class="shelf-label-action">Supprimer</div>
-        </div>
-        <div class="shelf-action text-center" data-drop-role="edit">
-          <div class="btn bg-warning"><i class="fas fa-edit"></i></div>
-          <div class="shelf-label-action">Modifier</div>
-        </div>
         <div class="shelf-action text-center">
           <a href="#" class="btn bg-success" data-custom-open="addBookModal-${shelf.id}">
             <i class="fas fa-plus"></i>
