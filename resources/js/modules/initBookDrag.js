@@ -1,4 +1,5 @@
 // resources/js/modules/initBookDrag.js
+
 export default function initBookDrag() {
   const draggables = document.querySelectorAll('.book-item');
   let dragged = null;
@@ -8,45 +9,49 @@ export default function initBookDrag() {
     book.dataset.dragInit = 'true';
     book.draggable = true;
 
-    book.addEventListener('dragstart', () => {
+    book.addEventListener('dragstart', e => {
+      e.stopPropagation();
       dragged = book;
       console.log('📚 [DragStart] book-id:', dragged.dataset.bookId);
       setTimeout(() => dragged.classList.add('invisible'), 0);
     });
 
-    book.addEventListener('dragend', () => {
+    book.addEventListener('dragend', e => {
+      e.stopPropagation();
       if (dragged) {
         dragged.classList.remove('invisible');
-        console.log('📚 [DragEnd] book');
+        console.log('📚 [DragEnd] book-id:', dragged.dataset.bookId);
       }
       dragged = null;
     });
 
     book.addEventListener('dragover', e => {
-      if (!(dragged && dragged.classList.contains('book-item'))) return;
-      console.log('📚 [DragOver] book-id:', book.dataset.bookId);
+      e.stopPropagation();
+      if (!dragged) return;
       e.preventDefault();
+      console.log('📚 [DragOver] book-id:', book.dataset.bookId);
     });
 
-    book.addEventListener('dragenter', () => {
-      if (!(dragged && dragged.classList.contains('book-item')) || book === dragged) return;
+    book.addEventListener('dragenter', e => {
+      e.stopPropagation();
+      if (!dragged || book === dragged) return;
       console.log('📚 [DragEnter] book-id:', book.dataset.bookId);
       book.classList.add('border', 'border-primary');
     });
 
-    book.addEventListener('dragleave', () => {
-      if (!(dragged && dragged.classList.contains('book-item'))) return;
+    book.addEventListener('dragleave', e => {
+      e.stopPropagation();
+      if (!dragged) return;
       console.log('📚 [DragLeave] book-id:', book.dataset.bookId);
       book.classList.remove('border', 'border-primary');
     });
 
     book.addEventListener('drop', e => {
-      if (!(dragged && dragged.classList.contains('book-item'))) return;
-      console.log('📚 [Drop] on book-id:', book.dataset.bookId);
+      e.stopPropagation();
+      if (!dragged || book === dragged) return;
       e.preventDefault();
+      console.log('📚 [Drop] on book-id:', book.dataset.bookId);
       book.classList.remove('border', 'border-primary');
-
-      if (book === dragged) return;
 
       const parent = book.parentNode;
       const booksArray = Array.from(parent.children);
@@ -57,7 +62,8 @@ export default function initBookDrag() {
       if (from < to) parent.insertBefore(dragged, book.nextSibling);
       else parent.insertBefore(dragged, book);
 
-      const newOrder = Array.from(parent.querySelectorAll('.book-item')).map(b => b.dataset.bookId);
+      const newOrder = Array.from(parent.querySelectorAll('.book-item'))
+        .map(b => b.dataset.bookId);
       console.log('📚 [NewOrder]:', newOrder);
       const shelfId = dragged.dataset.shelfId;
 

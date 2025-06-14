@@ -86,16 +86,24 @@ function renderAddBookModal(shelf) {
           <button type="button" class="btn-close" data-custom-close></button>
         </div>
         <div class="modal-body">
-          <form class="ajax-form" data-ajax-route="/books" method="POST" enctype="multipart/form-data">
-            <input type="hidden" name="_token" value="${document.querySelector('meta[name=csrf-token]').content}">
-            <input type="hidden" name="shelf_id" value="${shelf.id}" />
+          <form
+            id="addBookForm-${shelf.id}"
+            class="ajax-form"
+            action="/books"
+            method="POST"
+            enctype="multipart/form-data"
+          >
+            <input type="hidden" name="_token"
+                   value="${document.querySelector('meta[name=csrf-token]').content}">
+            <input type="hidden" name="shelf_id" value="${shelf.id}">
             <div class="mb-3">
               <label class="form-label">Nom du livre</label>
-              <input type="text" class="form-control" name="name" required />
+              <input type="text" class="form-control" name="name" required>
             </div>
             <div class="mb-3">
               <label class="form-label">Image</label>
-              <input type="file" class="form-control" name="image" accept="image/*" required />
+              <input type="file" class="form-control" name="image"
+                     accept="image/*" required>
             </div>
             <div class="mb-3">
               <label class="form-label">Description</label>

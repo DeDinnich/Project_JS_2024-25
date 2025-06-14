@@ -9,7 +9,6 @@ export default function initShelfDrag() {
     console.warn('📦 [initShelfDrag] shelves-container non trouvé');
     return;
   }
-  console.log('📦 [initShelfDrag] Delegated drag & drop initialisé');
 
   // début du drag
   container.addEventListener('dragstart', e => {

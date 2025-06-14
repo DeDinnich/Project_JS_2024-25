@@ -2,6 +2,7 @@
 
 import { rebindScripts } from './helpers';
 import { renderShelf, renderBook } from './renderer';
+import initBookDrag from './initBookDrag';
 
 export default function initNotifications() {
   const container = document.getElementById('notification-container');
@@ -62,8 +63,14 @@ function handleBook({ action, book, ordered_ids, shelf_id }) {
   const flex = shelfBlock.querySelector('.shelf-inner');
 
   if (action === 'create' && book) {
+    // Injecte le nouveau livre
     flex.insertAdjacentHTML('beforeend', renderBook(book, shelf_id));
-  } else if (action === 'reorder' && ordered_ids) {
+    // Rattache le drag&drop uniquement sur ce livre
+    initBookDrag();
+    return;
+  }
+
+  if (action === 'reorder' && ordered_ids) {
     ordered_ids.forEach((id, idx) => {
       const el = flex.querySelector(`.book-item[data-book-id="${id}"]`);
       if (el) el.dataset.order = idx;
