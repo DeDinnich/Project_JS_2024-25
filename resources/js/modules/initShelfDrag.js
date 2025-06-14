@@ -3,14 +3,17 @@ import { updateStorage } from './renderer';
 
 export default function initShelfDrag() {
   const container = document.getElementById('shelves-container');
-  let dragged = null;
+  if (!container) return;
 
-  if (!container) {
-    console.warn('📦 [initShelfDrag] shelves-container non trouvé');
+  // Ne bind qu'une seule fois
+  if (container.dataset.dragInit) {
     return;
   }
+  container.dataset.dragInit = 'true';
 
-  // début du drag
+  let dragged = null;
+
+  // Drag start
   container.addEventListener('dragstart', e => {
     const shelf = e.target.closest('.shelf-block');
     if (!shelf) return;
@@ -18,27 +21,25 @@ export default function initShelfDrag() {
     console.log('📦 [DragStart] shelf-id:', dragged.dataset.shelfId);
   });
 
-  // fin du drag
+  // Drag end
   container.addEventListener('dragend', e => {
-    if (dragged) {
-      console.log('📦 [DragEnd] shelf-id:', dragged.dataset.shelfId);
-      dragged = null;
-    }
+    if (!dragged) return;
+    console.log('📦 [DragEnd] shelf-id:', dragged.dataset.shelfId);
+    dragged = null;
   });
 
-  // survol pendant le drag
+  // Drag over
   container.addEventListener('dragover', e => {
     const shelf = e.target.closest('.shelf-block');
     if (!dragged || !shelf || shelf === dragged) return;
-    console.log('📦 [DragOver] shelf-id:', shelf.dataset.shelfId);
     e.preventDefault();
+    console.log('📦 [DragOver] shelf-id:', shelf.dataset.shelfId);
   });
 
-  // entrée dans une cible
+  // Drag enter → highlight
   container.addEventListener('dragenter', e => {
     const shelf = e.target.closest('.shelf-block');
     if (!dragged || !shelf || shelf === dragged) return;
-    console.log('📦 [DragEnter] shelf-id:', shelf.dataset.shelfId);
     const label = shelf.querySelector('.shelf-label-text');
     if (label) {
       label.classList.add('drop-target');
@@ -46,11 +47,10 @@ export default function initShelfDrag() {
     }
   });
 
-  // sortie d'une cible
+  // Drag leave → un-highlight
   container.addEventListener('dragleave', e => {
     const shelf = e.target.closest('.shelf-block');
     if (!shelf) return;
-    console.log('📦 [DragLeave] shelf-id:', shelf.dataset.shelfId);
     const label = shelf.querySelector('.shelf-label-text');
     if (label) {
       label.classList.remove('drop-target');
@@ -58,12 +58,12 @@ export default function initShelfDrag() {
     }
   });
 
-  // dépôt
+  // Drop → reorder
   container.addEventListener('drop', e => {
     const shelf = e.target.closest('.shelf-block');
     if (!dragged || !shelf) return;
-    console.log('📦 [Drop] sur shelf-id:', shelf.dataset.shelfId);
     e.preventDefault();
+
     const label = shelf.querySelector('.shelf-label-text');
     if (label) {
       label.classList.remove('drop-target');
@@ -71,19 +71,20 @@ export default function initShelfDrag() {
     }
     if (shelf === dragged) return;
 
-    const children = Array.from(container.children);
-    const from = children.indexOf(dragged);
-    const to = children.indexOf(shelf);
+    const items = Array.from(container.children);
+    const from = items.indexOf(dragged);
+    const to   = items.indexOf(shelf);
     console.log(`📦 [Reorder] from ${from} to ${to}`);
 
     if (from < to) container.insertBefore(dragged, shelf.nextSibling);
-    else container.insertBefore(dragged, shelf);
+    else           container.insertBefore(dragged, shelf);
 
+    // Nouvelle série d'IDs
     const newOrder = Array.from(container.querySelectorAll('.shelf-block'))
       .map(el => el.dataset.shelfId);
     console.log('📦 [NewOrder]:', newOrder);
 
-    // mise à jour back-end
+    // Mise à jour back-end
     fetch('/shelves/reorder', {
       method: 'POST',
       headers: {
@@ -92,19 +93,16 @@ export default function initShelfDrag() {
       },
       body: JSON.stringify({ ordered_ids: newOrder })
     })
-    .then(res => res.json())
+    .then(r => r.json())
     .then(data => {
       console.log('✅ [Reorder shelves] OK:', data);
-
-      // mettre à jour le localStorage et re-rendu (mise à jour order)
+      // Met à jour localStorage + rerender
       const stored = JSON.parse(localStorage.getItem('shelves') || '[]');
       const reordered = newOrder
         .map(id => stored.find(s => s.id === id))
-        .filter(s => s);
-
-      // mise à jour de la propriété order
-      reordered.forEach((sh, idx) => { sh.order = idx; });
-
+        .filter(Boolean);
+      // Remet à jour l'ordre dans l'objet
+      reordered.forEach((s, idx) => s.order = idx);
       updateStorage(reordered);
       console.log('📦 [LocalStorage] mise à jour (order réinitialisé) et rendu');
     })

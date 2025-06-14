@@ -17,7 +17,7 @@ export function renderAll() {
     .sort((a, b) => a.order - b.order)
     .forEach(shelf => container.insertAdjacentHTML('beforeend', renderShelf(shelf)));
 
-  // réinitialiser tous les scripts après rendu
+  // réinitialiser tous les scripts après rendu (drag, ajax, modals…)
   rebindScripts();
 }
 
@@ -36,42 +36,51 @@ export function renderShelf(shelf) {
   <div class="shelf-block" draggable="true" data-shelf-id="${shelf.id}" data-order="${shelf.order}">
     <div class="shelf-scroll">
       <div class="shelf-inner">
-          <div class="shelf-action text-center" data-drop-role="delete">
-            <div class="btn bg-danger">
-                <i class="fas fa-trash"></i>
-            </div>
-            <div class="shelf-label-action">Supprimer</div>
-          </div>
 
-          <div class="shelf-action text-center" data-drop-role="edit">
-            <div class="btn bg-warning">
-                <i class="fas fa-edit"></i>
-            </div>
-            <div class="shelf-label-action">Modifier</div>
-          </div>
+        <!-- actions delete / edit / add as before -->
+        <div class="shelf-action text-center" data-drop-role="delete">
+          <div class="btn bg-danger"><i class="fas fa-trash"></i></div>
+          <div class="shelf-label-action">Supprimer</div>
+        </div>
+        <div class="shelf-action text-center" data-drop-role="edit">
+          <div class="btn bg-warning"><i class="fas fa-edit"></i></div>
+          <div class="shelf-label-action">Modifier</div>
+        </div>
+        <div class="shelf-action text-center">
+          <a href="#" class="btn bg-success" data-custom-open="addBookModal-${shelf.id}">
+            <i class="fas fa-plus"></i>
+          </a>
+          <div class="shelf-label-action">Ajouter</div>
+        </div>
 
-          <div class="shelf-action text-center">
-            <a href="#" class="btn bg-success" data-custom-open="addBookModal-${shelf.id}">
-              <i class="fas fa-plus"></i>
-            </a>
-            <div class="shelf-label-action">Ajouter</div>
-          </div>
         ${booksHTML}
+
       </div>
     </div>
     <div class="shelf-name-bar">
       <div class="shelf-label-text">${shelf.name}</div>
     </div>
   </div>
+
   ${renderAddBookModal(shelf)}
   ${shelf.books.map(book => renderEditBookModal(book)).join('')}
-  ${shelf.books.map(book => renderDeleteBookModal(book)).join('')}`;
+  ${shelf.books.map(book => renderDeleteBookModal(book)).join('')}
+  ${shelf.books.map(book => renderViewBookModal(book)).join('')}
+  `;
 }
 
 export function renderBook(book, shelfId) {
   return `
-  <div class="book-item" draggable="true" data-book-id="${book.id}" data-shelf-id="${shelfId}" data-order="${book.order}">
-    <img src="${book.image}" alt="${book.name}" class="img-fluid rounded" />
+  <div
+    class="book-item"
+    draggable="true"
+    data-book-id="${book.id}"
+    data-shelf-id="${shelfId}"
+    data-order="${book.order}"
+    style="cursor: pointer;"
+    data-custom-open="viewBookModal-${book.id}"
+  >
+    <img src="${book.image}" alt="${book.name}" class="img-fluid rounded" style="max-height:120px; object-fit:cover;" />
     <div class="book-name">${book.name}</div>
   </div>`;
 }
@@ -165,6 +174,36 @@ function renderDeleteBookModal(book) {
             <input type="hidden" name="_method" value="DELETE" />
             <button type="submit" class="btn btn-danger">Supprimer</button>
           </form>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+// Détail : modal d’affichage d’un livre
+function renderViewBookModal(book) {
+  return `
+  <div class="modal fade" id="viewBookModal-${book.id}" tabindex="-1" data-custom-modal>
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Détails du livre</h5>
+          <button type="button" class="btn-close" data-custom-close></button>
+        </div>
+        <div class="modal-body">
+          <div class="row gy-3">
+            <div class="col-4 d-flex justify-content-center align-items-start">
+              <img src="${book.image}" alt="${book.name}" class="img-fluid rounded" style="width:100%; height:auto; object-fit:cover;" />
+            </div>
+            <div class="col-8">
+              <h4>${book.name}</h4>
+              <hr/>
+              <p>${book.description || '<em>Aucune description.</em>'}</p>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-custom-close>Fermer</button>
         </div>
       </div>
     </div>
